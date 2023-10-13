@@ -7,7 +7,7 @@ metadata:
 spec:
   generators:
   - git:
-      repoURL: https://github.com/stianfro/gitops-monorepo.git
+      repoURL: https://github.com/Intility/gitops-monorepo-crossplane.git
       revision: HEAD
       directories:
       - path: src/*
@@ -18,13 +18,13 @@ spec:
     spec:
       project: "default"
       syncPolicy:
-        automated:
-          prune: true
-          selfHeal: true
+        # automated:
+        #   prune: true
+        #   selfHeal: true
         syncOptions:
         - CreateNamespace=true
       source:
-        repoURL: https://github.com/stianfro/gitops-monorepo.git
+        repoURL: https://github.com/Intility/gitops-monorepo-crossplane.git
         targetRevision: HEAD
         path: '{{path}}'
       destination:

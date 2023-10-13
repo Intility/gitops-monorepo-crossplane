@@ -14,3 +14,10 @@ patches:
       data:
         server.insecure: "true"
         server.basehref: "/" # must match the ingress path prefix
+  - patch: |
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: argocd-cm
+      data:
+        application.resourceTrackingMethod: annotation

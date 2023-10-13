@@ -1,0 +1,240 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: webapp-composition
+  labels:
+    crossplane.io/xrd: xwebapps.kubernetes.example.com
+    provider: kubernetes
+spec:
+  patchSets:
+      - name: namespace-patch
+        patches:
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: spec.applicationName
+              - fromFieldPath: spec.environment
+            strategy: string
+            string:
+              fmt: "%s-%s"
+          toFieldPath: spec.forProvider.manifest.metadata.namespace
+        - type: CombineFromComposite
+          combine:
+            variables:
+              - fromFieldPath: spec.applicationName
+              - fromFieldPath: spec.environment
+            strategy: string
+            string:
+              fmt: "%s-%s"
+          toFieldPath: spec.forProvider.manifest.metadata.labels.app
+
+  compositeTypeRef:
+    apiVersion: kubernetes.example.com/v1alpha1
+    kind: XWebApp
+  resources:
+  - name: webapp-namespace
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      metadata:
+        name: #Patch 1
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: #Patch 2
+        providerConfigRef:
+          name: kubernetes-provider
+    patches:
+
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s"
+      toFieldPath: spec.forProvider.manifest.metadata.name
+
+    # Patch 1
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s-ns"
+      toFieldPath: metadata.name
+
+  - name: webapp-deployment
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      metadata:
+        name: #Patch 1
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              labels:
+                app: #Patch 2
+              name: #Patch 3
+              namespace: #Patch 2
+            spec:
+              replicas: #Patch 5
+              selector:
+                matchLabels:
+                  app: #Patch 6
+              template:
+                metadata:
+                  labels:
+                    app: #Patch 7
+                spec:
+                  containers:
+                  - image:  #Patch 8
+                    imagePullPolicy: Always
+                    name: web-app
+                    ports:
+                    - containerPort: 8080
+                    resources:
+                      limits:
+                        memory: 128Mi
+                      requests:
+                        memory: 128Mi
+                        cpu: 10m
+        providerConfigRef:
+          name: kubernetes-provider
+
+    patches:
+    # Patch 1
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s-deploy"
+      toFieldPath: metadata.name
+    # Patch 2
+    - type: PatchSet
+      patchSetName: namespace-patch
+
+    # Patch 3
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s-deploy"
+      toFieldPath: spec.metadata.name
+
+    # Patch 5
+    - fromFieldPath: spec.environment
+      toFieldPath: spec.forProvider.manifest.spec.replicas
+      transforms:
+        - type: map
+          map:
+            dev: 1
+            qa: 2
+            prod: 3
+
+    # Patch 6
+
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s"
+      toFieldPath: spec.forProvider.manifest.spec.selector.matchLabels.app
+
+    # Patch 7
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s"
+      toFieldPath: spec.forProvider.manifest.spec.template.metadata.labels.app
+
+    # Patch 8
+    - fromFieldPath: spec.image
+      toFieldPath: spec.forProvider.manifest.spec.template.spec.containers[0].image
+
+  - name: webapp-service
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      metadata:
+        name: #Patch 1
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: v1
+            kind: Service
+            metadata:
+              labels:
+                app: #Patch 2
+              name: #Patch 3
+              namespace: #Patch 2
+            spec:
+              ports:
+              - name: 8080-tcp
+                port: 8080
+                targetPort: 8080
+              selector:
+                app: #patch
+              type: ClusterIP
+        providerConfigRef:
+          name: kubernetes-provider
+    patches:
+    # Patch 1
+
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s-svc"
+      toFieldPath: metadata.name
+
+
+    # Patch 2
+    - type: PatchSet
+      patchSetName: namespace-patch
+
+    # Patch 3
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s-svc"
+      toFieldPath: spec.forProvider.manifest.metadata.name
+
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s-svc"
+      toFieldPath: spec.forProvider.manifest.metadata.labels.app
