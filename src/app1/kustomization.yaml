@@ -1,0 +1,4 @@
+resources:
+  - gitops/dev.yaml
+  # - gitops/test.yaml
+  # - gitops/prod.yaml

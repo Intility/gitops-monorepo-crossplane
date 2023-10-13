@@ -26,14 +26,14 @@ then
   echo "creating cluster with minikube..."
   if ! minikube start --addons ingress
   then
-    echo "Failed to create minikube cluster. Exiting..."
+    echo "failed to create minikube cluster. Exiting..."
     exit 1
   fi
 else
   echo "creating cluster with kind..."
   if ! kind create cluster --name my-cluster --config .local/kind-config.yaml
   then
-    echo "Failed to create kind cluster. Exiting..."
+    echo "failed to create kind cluster. exiting..."
     exit 1
   fi
 fi
@@ -68,6 +68,50 @@ kubectl wait -n argocd \
   --timeout=90s \
   --selector=app.kubernetes.io/name=argocd-server
 
+printf "\n%s%s%s\n" "$STAR" "$COLOR" "installing crossplane..."
+helm repo add crossplane-stable https://charts.crossplane.io/stable
+helm repo update
+helm install crossplane --namespace crossplane-system \
+                        --create-namespace crossplane-stable/crossplane
+
+sleep 10
+
+printf "\n%s%s%s\n" "$STAR" "$COLOR" "waiting for crossplane to get ready..."
+kubectl wait --namespace crossplane-system \
+             --for=condition=ready pod \
+             --selector=app.kubernetes.io/instance=crossplane \
+             --timeout=90s
+
+printf "\n%s%s%s\n" "$STAR" "$COLOR" "installing crossplane kubernetes provider..."
+cat << EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-kubernetes
+spec:
+  package: "crossplanecontrib/provider-kubernetes:main"
+EOF
+
+printf "\n%s%s%s\n" "$STAR" "$COLOR" "sleeping for 10 seconds..."
+sleep 10
+
+SA=$(kubectl -n crossplane-system get sa -o name | grep provider-kubernetes | sed -e 's|serviceaccount\/|crossplane-system:|g')
+kubectl create clusterrolebinding provider-kubernetes-admin-binding --clusterrole cluster-admin --serviceaccount="${SA}"
+
+printf "\n%s%s%s\n" "$STAR" "$COLOR" "applying provider config..."
+cat << EOF | kubectl apply -f -
+apiVersion: kubernetes.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: kubernetes-provider
+spec:
+  credentials:
+    source: InjectedIdentity
+EOF
+
+printf "\n%s%s%s\n" "$STAR" "$COLOR" "creating custom resources..."
+kubectl apply -k iac/crossplane || exit 1
+
 argo_password=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 argo_host=$(kubectl -n argocd get ingress argocd-server-ingress -o jsonpath="{.spec.rules[0].host}")
 argo_path=$(kubectl get ingress -n argocd argocd-server-ingress -o jsonpath="{.spec.rules[0].http.paths[0].path}")
@@ -75,14 +119,4 @@ printf "\nArgoCD now available at http://%s%s" "${argo_host:=localhost}" "$argo_
 printf "\nusername: %sadmin%s" "${BRIGHT}" "${NORMAL}"
 printf "\npassword: %s%s%s\n" "${BRIGHT}" "$argo_password" "${NORMAL}"
 
-kubectl apply -f iac/appset.yaml
-
-# echo ""
-# echo "You can now create a bootstrap app by running 'kubectl apply -f .bootstrap/dev.yaml'"
-
-# if [[ $MINIKUBE == true ]]
-# then
-#   echo ""
-#   printf "\n%s%s%s\n" "$STAR" "$COLOR" "starting minkube tunnel... Use a new terminal to run 'kubectl apply -f .bootstrap/dev.yaml'"
-#   minikube tunnel
-# fi
+kubectl apply -k iac/ || exit 1

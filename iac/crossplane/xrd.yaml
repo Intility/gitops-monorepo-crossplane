@@ -1,0 +1,36 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xwebapps.kubernetes.example.com
+spec:
+  group: kubernetes.example.com
+  defaultCompositionRef:
+    name: webapp-composition
+  names:
+    kind: XWebApp
+    plural: xwebapps
+  claimNames:
+    kind: WebApp
+    plural: webapps
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              applicationName:
+                type: string
+              environment:
+                type: string
+              image:
+                type: string
+          status:
+            type: object
+            properties:
+              applicationName:
+                type: string
