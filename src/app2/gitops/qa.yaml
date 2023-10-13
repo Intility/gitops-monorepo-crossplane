@@ -1,10 +1,10 @@
 apiVersion: kubernetes.example.com/v1alpha1
 kind: WebApp
 metadata:
-  name: app2-test
+  name: app2-qa
   namespace: default
 spec:
   applicationName: app2
-  environment: test
+  environment: qa
   image: "quay.io/avulaj/web-service-gin:latest"
-  # hostName: app2-test.localhost
+  # hostName: app2-qa.localhost

@@ -1,4 +1,4 @@
 resources:
   - gitops/dev.yaml
-  - gitops/test.yaml
+  - gitops/qa.yaml
   - gitops/prod.yaml
