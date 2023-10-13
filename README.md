@@ -1,9 +1,14 @@
-# gitops-monorepo
+# gitops-monorepo-crossplane
 
 Repo to simulate GitOps in a monorepo setup.
 
-To see how an application would look like use `kustomize build`, e.g:
+## Testing
 
-```
-kustomize build src/app1/gitops/dev/
-```
+The best way to get started is by creating a local Kubernetes cluster.
+
+**Prerequisites**
+- kubectl
+- helm
+- kind / minikube
+
+Start the local test environment by running `sh .local/install.sh`
