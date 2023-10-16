@@ -192,9 +192,9 @@ spec:
               namespace: #Patch 2
             spec:
               ports:
-              - name: 8080-tcp
-                port: 8080
-                targetPort: 8080
+              - name: 4000-tcp
+                port: 4000
+                targetPort: 4000
               selector:
                 app: #patch
               type: ClusterIP
