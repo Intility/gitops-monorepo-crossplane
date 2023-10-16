@@ -264,7 +264,7 @@ spec:
                       service:
                         name:  #Patch 5 
                         port:
-                          number: 8080
+                          number: 4000
                     path: /
                     pathType: Prefix
         providerConfigRef:
@@ -305,7 +305,7 @@ spec:
       combine:
         variables:
           - fromFieldPath: spec.applicationName
-          - fromFieldPath: spec.enviorment
+          - fromFieldPath: spec.environment
         strategy: string
         string:
           fmt: "%s-%s-svc"

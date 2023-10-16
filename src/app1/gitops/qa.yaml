@@ -6,5 +6,5 @@ metadata:
 spec:
   applicationName: app1
   environment: qa
-  image: "quay.io/avulaj/web-service-gin:latest"
+  image: "ghcr.io/nkzk/example-go-image:release"
   host: app1-qa.localhost
