@@ -7,4 +7,4 @@ spec:
   applicationName: app1
   environment: qa
   image: "quay.io/avulaj/web-service-gin:latest"
-  hostName: app1-qa.localhost
+  host: app1-qa.localhost
