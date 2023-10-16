@@ -238,3 +238,75 @@ spec:
         string:
           fmt: "%s-%s-svc"
       toFieldPath: spec.forProvider.manifest.metadata.labels.app
+
+  - name: webapp-ingress
+    base: 
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      metadata:
+        name: #Patch 1 
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: networking.k8s.io/v1
+            kind: Ingress
+            metadata:
+              labels:
+                app: #Patch 2
+              name: #Patch 3 
+              namespace: #Patch 2
+            spec:
+              rules:
+              - host:  #Patch 4 
+                http:
+                  paths:
+                  - backend:
+                      service:
+                        name:  #Patch 5 
+                        port:
+                          number: 8080
+                    path: /
+                    pathType: Prefix
+        providerConfigRef:
+          name: kubernetes-provider
+    patches:
+    # Patch 1 
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.enviorment
+        strategy: string
+        string:
+          fmt: "%s-%s-ing"
+      toFieldPath: metadata.name
+
+    # Patch 2
+    - type: PatchSet
+      patchSetName: namespace-patch
+      
+    # Patch 3 
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.enviorment
+        strategy: string
+        string:
+          fmt: "%s-%s-ing"
+      toFieldPath: spec.forProvider.manifest.metadata.name 
+
+    # Patch 4 
+    - fromFieldPath: spec.host
+      toFieldPath: spec.forProvider.manifest.spec.rules[0].host
+    
+    # Patch 5
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.enviorment
+        strategy: string
+        string:
+          fmt: "%s-%s-svc"
+      toFieldPath: spec.forProvider.manifest.spec.rules[0].http.paths[0].backend.service.name

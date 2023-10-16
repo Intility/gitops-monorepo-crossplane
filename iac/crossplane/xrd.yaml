@@ -29,6 +29,8 @@ spec:
                 type: string
               image:
                 type: string
+              host:
+                type: string
           status:
             type: object
             properties:
