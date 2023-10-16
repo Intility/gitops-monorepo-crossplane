@@ -187,7 +187,7 @@ spec:
             kind: Service
             metadata:
               labels:
-                app: #Patch 2
+                app: #Patch 4
               name: #Patch 3
               namespace: #Patch 2
             spec:
@@ -196,13 +196,13 @@ spec:
                 port: 4000
                 targetPort: 4000
               selector:
-                app: #patch
+                app: #Patch 5
               type: ClusterIP
         providerConfigRef:
           name: kubernetes-provider
     patches:
-    # Patch 1
 
+    # Patch 1
     - type: CombineFromComposite
       combine:
         variables:
@@ -212,7 +212,6 @@ spec:
         string:
           fmt: "%s-%s-svc"
       toFieldPath: metadata.name
-
 
     # Patch 2
     - type: PatchSet
@@ -229,6 +228,7 @@ spec:
           fmt: "%s-%s-svc"
       toFieldPath: spec.forProvider.manifest.metadata.name
 
+    # Patch 4
     - type: CombineFromComposite
       combine:
         variables:
@@ -236,8 +236,19 @@ spec:
           - fromFieldPath: spec.environment
         strategy: string
         string:
-          fmt: "%s-%s-svc"
+          fmt: "%s-%s"
       toFieldPath: spec.forProvider.manifest.metadata.labels.app
+
+    # Patch 5
+    - type: CombineFromComposite
+      combine:
+        variables:
+          - fromFieldPath: spec.applicationName
+          - fromFieldPath: spec.environment
+        strategy: string
+        string:
+          fmt: "%s-%s"
+      toFieldPath: spec.forProvider.manifest.spec.selector.app
 
   - name: webapp-ingress
     base: 
@@ -266,7 +277,7 @@ spec:
                         port:
                           number: 4000
                     path: /
-                    pathType: Prefix
+                    pathType: ImplementationSpecific
         providerConfigRef:
           name: kubernetes-provider
     patches:
